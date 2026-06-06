@@ -58,14 +58,13 @@ Codestreak helps you and your friends stay consistent with DSA practice and lear
 
 ### Activity Fields
 
-| Field       | Type   | Description                                     |
-| ----------- | ------ | ----------------------------------------------- |
-| type        | enum   | problem / concept / revision / other            |
-| title       | string | Problem name or topic                           |
-| description | string | 2-3 line summary                                |
-| difficulty  | enum   | easy / medium / hard / null (only for problems) |
-| status      | enum   | completed / in-progress                         |
-| date        | string | YYYY-MM-DD                                      |
+| Field       | Type   | Description                          |
+| ----------- | ------ | ------------------------------------ |
+| type        | enum   | problem / concept / revision / other |
+| title       | string | Problem name or topic                |
+| description | string | 2-3 line summary                     |
+| status      | enum   | completed / in-progress              |
+| date        | string | YYYY-MM-DD                           |
 
 ---
 
@@ -115,9 +114,7 @@ Validate:
 ```
 Open Codestreak
       ↓
-Check localStorage for JWT
-      ↓
-GET /auth/verify
+GET /auth/verify (cookie sent automatically)
       ↓
 Valid → Dashboard
 Invalid/Expired → Landing page
@@ -128,7 +125,7 @@ Invalid/Expired → Landing page
 ```
 Tap avatar → dropdown → Logout
       ↓
-Clear JWT from localStorage
+POST /auth/logout (clears HTTP-only cookie)
       ↓
 Redirect to Landing page
 ```
@@ -141,8 +138,8 @@ Redirect to Landing page
 
 - Google verifies identity (name, email, googleId)
 - Backend creates your own JWT (30 day expiry)
-- Frontend stores JWT in localStorage
-- Every API request sends JWT in headers
+- JWT stored in HTTP-only cookie (not accessible by JavaScript)
+- Every API request sends cookie automatically
 - Google is never involved again until token expires
 
 ---
@@ -176,10 +173,14 @@ Don't log → Grace period expires → Streak resets to 0 ❌
 | Saved ✅   | Logged within grace period, streak saved |
 | Expired 💔 | Grace period expired, streak reset to 0  |
 
-### Cron Jobs (Run at Midnight Daily)
+### Streak Logic (Lazy Evaluation)
 
-1. **Mark at risk:** Find users who missed yesterday → set `streakAtRisk: true`
-2. **Expire grace:** Find users where grace expired + didn't log → reset streak to 0
+Instead of cron jobs, streak state is calculated on every `GET /dashboard` call:
+
+1. **Mark at risk:** If user missed yesterday and `currentStreak > 0` → set `streakAtRisk: true`
+2. **Expire grace:** If grace period expired and user didn't log → reset streak to 0
+
+This runs once per day per user (skipped if `lastActivityDate === today`). No cron jobs needed.
 
 ---
 
@@ -199,10 +200,10 @@ Don't log → Grace period expires → Streak resets to 0 ❌
 1. **Landing** - Logo, feature list, Google login button
 2. **Create/Join Room** - Two options after first login
 3. **Dashboard** - Streaks, heatmap, today's activity, motivation message
-4. **Log Activity** - Type, title, summary, difficulty (problems only), status
+4. **Log Activity** - Type, title, summary, status
 5. **History** - All activities, User + Type dropdowns, infinite scroll, ⋮ edit/delete
 6. **Achievements** - Stats card, next badge progress, earned + locked badges
-7. **Avatar Dropdown** - Edit name, edit LeetCode username, restore tokens count, logout
+7. **Avatar Dropdown** - Edit name, edit LeetCode username, logout
 
 ---
 
@@ -269,7 +270,6 @@ All badges **computed on the fly** from existing data. Not stored in DB.
   "type": "String (problem | concept | revision | other)",
   "title": "String",
   "description": "String",
-  "difficulty": "String (easy | medium | hard) | null",
   "status": "String (completed | in-progress)",
   "activityDate": "String (YYYY-MM-DD)",
   "createdAt": "String (YYYY-MM-DD)"
@@ -285,7 +285,7 @@ All badges **computed on the fly** from existing data. Not stored in DB.
 ### DB Index
 
 ```javascript
-Activity.index({ createdBy: 1, date: 1 });
+Activity.index({ createdBy: 1, activityDate: 1 });
 ```
 
 ---
@@ -294,16 +294,16 @@ Activity.index({ createdBy: 1, date: 1 });
 
 ```
 AUTH
-POST   /auth/google          ← Google OAuth login/signup → returns JWT
+POST   /auth/google          ← Google OAuth login/signup → returns JWT in HTTP-only cookie
 GET    /auth/verify          ← Verify JWT on app load/reload
-POST   /auth/logout          ← Clear session
+POST   /auth/logout          ← Clears HTTP-only cookie
 
 ROOMS
 POST   /rooms                ← Create room (generates unique code)
 POST   /rooms/join           ← Join room with code
 
 DASHBOARD
-GET    /dashboard            ← Streaks + today's activities for both users
+GET    /dashboard            ← Streaks + today's activities for both users (also runs streak logic)
 
 ACTIVITIES
 GET    /activities           ← All activities (filters + pagination)
@@ -318,9 +318,6 @@ PUT    /users/profile/leetcode  ← Update LeetCode username
 
 SYNC
 GET    /sync/leetcode        ← Fetch today's accepted submissions from LeetCode
-
-STREAKS
-POST   /streaks/restore      ← (Removed - replaced by grace period)
 ```
 
 **Total: 13 endpoints**
@@ -346,7 +343,7 @@ docker run -p 3000:3000 alfaarghya/alfa-leetcode-api
 
 **Production:** `https://alfa-leetcode-api.onrender.com`
 
-**Duplicate prevention:** Check if activity with same title + date + createdBy already exists before saving.
+**Duplicate prevention:** Check if activity with same title + activityDate + createdBy already exists before saving.
 
 ---
 
@@ -366,8 +363,9 @@ docker run -p 3000:3000 alfaarghya/alfa-leetcode-api
 - [ ] Invite via email/link
 - [ ] Admin controls for room creator
 - [ ] Global leaderboard
+- [ ] Cron jobs for streak updates (when user base grows)
 
 ---
 
-_Document updated: May 30, 2026_
+_Document updated: June 6, 2026_
 _Status: Design complete, ready to build_ 🚀
