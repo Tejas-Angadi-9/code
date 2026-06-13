@@ -38,7 +38,7 @@ export class ActivitiesService {
     try {
       const activity: ActivityDocument = await this.activityModel.create({
         ...activityDto,
-        createdBy: userId,
+        createdBy: new Types.ObjectId(userId),
         createdAt: new Date().toISOString().split('T')[0],
       });
       return activity;
