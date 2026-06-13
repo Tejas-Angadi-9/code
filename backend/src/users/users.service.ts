@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
@@ -18,10 +14,7 @@ export class UsersService {
       return user;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch user profile: ',
-        error as Error,
-      );
+      throw new InternalServerErrorException('Failed to fetch user profile: ', error as Error);
     }
   }
 
@@ -37,10 +30,7 @@ export class UsersService {
     }
   }
 
-  async updateLeetcode(
-    userId: string,
-    leetcodeUsername: string,
-  ): Promise<void> {
+  async updateLeetcode(userId: string, leetcodeUsername: string): Promise<void> {
     try {
       const user = await this.userModel.findByIdAndUpdate(userId, {
         leetcodeUsername,

@@ -4,11 +4,7 @@ import JwtGuard from '../common/guards/jwt.guard';
 import CurrentUser from '../common/decorators/current-user.decorator';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { UserDocument } from './user.schema';
-import {
-  UpdateNameDto,
-  UpdateLeetcodeDto,
-  MessageResponseDto,
-} from './dto/users.dto';
+import { UpdateNameDto, UpdateLeetcodeDto, MessageResponseDto } from './dto/users.dto';
 import { USER_MESSAGES } from '../common/constants/messages';
 import { ROUTES } from '../common/constants/routes';
 
@@ -19,9 +15,7 @@ export class UsersController {
 
   @Get(ROUTES.USERS.PROFILE)
   async getProfile(@CurrentUser() user: JwtPayload): Promise<UserDocument> {
-    const userProfile: UserDocument = await this.usersService.getProfile(
-      user.sub,
-    );
+    const userProfile: UserDocument = await this.usersService.getProfile(user.sub);
     return userProfile;
   }
 

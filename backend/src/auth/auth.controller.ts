@@ -6,11 +6,7 @@ import CurrentUser from '../common/decorators/current-user.decorator';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { AUTH_MESSAGES } from '../common/constants/messages';
 import { ROUTES } from '../common/constants/routes';
-import {
-  GoogleLoginDto,
-  GoogleLoginResponseDto,
-  VerifyTokenResponseDto,
-} from './dto/auth.dto';
+import { GoogleLoginDto, GoogleLoginResponseDto, VerifyTokenResponseDto } from './dto/auth.dto';
 import { AUTH_TOKEN, THIRTY_DAYS_MS } from './constants/auth.constant';
 import { PRODUCTION } from 'src/common/constants/env.constant';
 
